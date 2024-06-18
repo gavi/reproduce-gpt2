@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.optim as optim
 
 data = open('input.txt').read()
 chars = sorted(set(data))
@@ -76,4 +77,18 @@ logits, loss = model(x,y)
 print(loss)
 
 input = torch.tensor([[0]]) #one batch with one token - new line character in this case
+print(decode(model.generate(input, max_tokens=200)[0].tolist()))
+
+#lets train 
+
+optimizer = optim.AdamW(model.parameters(), lr = 1e-3)
+
+for _ in range(10000):
+    x, y = get_batch('train')
+    logits, loss = model.forward(x,y)
+    print(loss)
+    optimizer.zero_grad(set_to_none=True)
+    loss.backward()
+    optimizer.step()
+
 print(decode(model.generate(input, max_tokens=200)[0].tolist()))
