@@ -33,8 +33,6 @@ def get_batch(split):
     y = torch.stack([data[i+1:i+context_size+1] for i in rands])
     return x,y
 
-print(get_batch('train'))
-
 #lets build a simple Bigram Model
 
 class Bigram(nn.Module):
@@ -55,14 +53,27 @@ class Bigram(nn.Module):
     
     @torch.no_grad
     def generate(self,x,max_tokens):
-        logits = self(x)
-        #extract last item
-        logits = logits[:,-1,:]
-         
+        for _ in range(max_tokens):
+            logits, loss = self(x)
+            #extract last item from the prediction
+
+            logits = logits[:,-1,:]
+            
+            #now get softmax
+            preds = F.softmax(logits, dim=-1) #B,1
+
+            #lets pick one of the sample
+
+            sample = torch.multinomial(preds, num_samples=1)
+            #append it - autoregressive
+            x = torch.cat((x,sample),dim=-1)
+        return x
 
 model = Bigram()
 x,y = get_batch('train')
 
 logits, loss = model(x,y)
+print(loss)
 
-print(logits,loss)
+input = torch.tensor([[0]]) #one batch with one token - new line character in this case
+print(decode(model.generate(input, max_tokens=200)[0].tolist()))
